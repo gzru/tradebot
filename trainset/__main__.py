@@ -20,8 +20,7 @@ args = parser.parse_args()
 
 def write_header(predict_field: str, train_batch: int, fd):
     fields = [predict_field]
-    names = Candle.field_name_list()
-    fields += make_batch_name_list(names=names, batch_size=train_batch)
+    fields += make_batch_name_list(batch_size=train_batch)
     fd.write(", ".join(fields))
     fd.write("\n")
 

@@ -102,7 +102,8 @@ class Candle:
         return result
 
 
-def make_batch_name_list(names: List[str], batch_size: int) -> List[str]:
+def make_batch_name_list(batch_size: int) -> List[str]:
+    names = Candle.field_name_list()
     names_seq = list()
     for i in range(batch_size):
         for name in names:
