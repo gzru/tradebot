@@ -1,4 +1,5 @@
-from typing import List, Any, Mapping
+from typing import List, Any, Mapping, Iterable
+from fastai.tabular.all import pd
 
 """
     1499040000000,      // Open time
@@ -69,15 +70,20 @@ class Candle:
                 value = str(value)
             self.data.append(value)
 
-    def to_csv(self) -> str:
-        data = Candle._data_filter_ignore(self.data)
-        return ", ".join(data)
-
-    def to_csv_all(self) -> str:
-        return ", ".join(self.data)
-
     def get_field(self, name: str) -> str:
         return self.data[FIELD_NAMES_INDEX[name]]
+
+    def get_data(self) -> List[str]:
+        return Candle._data_filter_ignore(self.data)
+
+    def get_data_all(self) -> List[str]:
+        return self.data
+
+    def to_csv(self) -> str:
+        return ", ".join(self.get_data())
+
+    def to_csv_all(self) -> str:
+        return ", ".join(self.get_data_all())
 
     @staticmethod
     def from_csv(record: str):
@@ -109,3 +115,11 @@ def make_batch_name_list(batch_size: int) -> List[str]:
         for name in names:
             names_seq.append("{}{}".format(name, i))
     return names_seq
+
+def make_pandas_series(candles: Iterable[Candle], names: Iterable[str]) -> pd.Series:
+    values = list()
+    for candle in candles:
+        for value in candle.get_data():
+            values.append(float(value))
+    return pd.Series(data=values, index=names)
+
