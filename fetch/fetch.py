@@ -14,7 +14,7 @@ def fetch_candles(client: Spot, symbol: str, interval: str, limit: int = 500, en
     return candles
 
 def _write_candle(candle: Candle, fd):
-    fd.write(candle.to_csv())
+    fd.write(candle.to_csv_all())
     fd.write("\n")
 
 def fetch_last_candles_to_csv(client: Spot, symbol: str, interval: str, limit: int, output_fname: str) -> int:
