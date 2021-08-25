@@ -1,5 +1,5 @@
-from typing import List, Any, Mapping, Iterable
-from fastai.tabular.all import pd
+from typing import List, Any, Mapping, Iterable, Optional
+from fastai.tabular.all import pd # type: ignore
 
 """
     1499040000000,      // Open time
@@ -56,6 +56,7 @@ def _make_field_names_index() -> Mapping[str, int]:
         mapping[field.name] = i
     return mapping
 
+NUM_FIELDS = len(FIELDS)
 FIELD_NAMES = _make_field_names()
 FIELD_NAMES_NO_IGNORE = _make_field_names_no_ignore()
 FIELD_NAMES_INDEX = _make_field_names_index()
@@ -64,26 +65,32 @@ FIELD_NAMES_INDEX = _make_field_names_index()
 class Candle:
     def __init__(self, data: List[Any]):
         assert len(FIELDS) == len(data)
-        self.data = list()
+        self.data: List[float] = list()
         for value in data:
-            if not isinstance(value, str):
-                value = str(value)
+            if not isinstance(value, float):
+                value = float(value)
             self.data.append(value)
 
-    def get_field(self, name: str) -> str:
+    def get_field(self, name: str) -> float:
         return self.data[FIELD_NAMES_INDEX[name]]
 
-    def get_data(self) -> List[str]:
+    def get_data(self) -> List[float]:
         return Candle._data_filter_ignore(self.data)
 
-    def get_data_all(self) -> List[str]:
+    def get_data_all(self) -> List[float]:
         return self.data
 
+    def normalize(self, offsets: List[float], dividers: List[float]) -> None:
+        assert len(FIELDS) == len(offsets)
+        assert len(FIELDS) == len(dividers)
+        for i in range(len(FIELDS)):
+            self.data[i] = (self.data[i] - offsets[i]) / dividers[i]
+
     def to_csv(self) -> str:
-        return ", ".join(self.get_data())
+        return ", ".join(map(str, self.get_data()))
 
     def to_csv_all(self) -> str:
-        return ", ".join(self.get_data_all())
+        return ", ".join(map(str, self.get_data_all()))
 
     @staticmethod
     def from_csv(record: str):
@@ -98,7 +105,7 @@ class Candle:
         return FIELD_NAMES
 
     @staticmethod
-    def _data_filter_ignore(data: List[str]) -> List[str]:
+    def _data_filter_ignore(data: List[float]) -> List[float]:
         assert len(FIELDS) == len(data)
         result = list()
         for i, value in enumerate(data):
@@ -120,6 +127,22 @@ def make_pandas_series(candles: Iterable[Candle], names: Iterable[str]) -> pd.Se
     values = list()
     for candle in candles:
         for value in candle.get_data():
-            values.append(float(value))
+            values.append(value)
     return pd.Series(data=values, index=names)
+
+def normalize_min_max(candles: List[Candle]):
+    min_values: List[float] = list(candles[0].get_data_all())
+    max_values: List[float] = list(candles[0].get_data_all())
+    dividers: List[float] = [1.0] * len(FIELDS)
+    for candle in candles[1:]:
+        for i, value in enumerate(candle.get_data_all()):
+            if min_values[i] > value:
+                min_values[i] = value
+            if max_values[i] < value:
+                max_values[i] = value
+    for i in range(len(FIELDS)):
+        if min_values[i] != max_values[i]:
+            dividers[i] = max_values[i] - min_values[i]
+    for candle in candles:
+        candle.normalize(min_values, dividers)
 
