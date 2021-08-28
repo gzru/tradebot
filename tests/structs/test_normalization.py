@@ -1,8 +1,8 @@
 import unittest
-from trainset.transform import Normalizer, \
-                               PlainNormalizerFactory, \
-                               MinMaxNormalizerFactory, \
-                               StdNormalizerFactory
+from structs.normalization import Normalizer, \
+                                  PlainNormalizerFactory, \
+                                  MinMaxNormalizerFactory, \
+                                  StdNormalizerFactory
 from structs.candle import Candle, NUM_FIELDS
 
 

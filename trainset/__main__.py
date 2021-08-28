@@ -3,10 +3,10 @@ import argparse
 from typing import Sequence, Deque, Optional, TextIO
 from collections import deque
 from structs.candle import Candle, make_batch_name_list
-from structs.normalize import Normalizer, \
-                              PlainNormalizerFactory, \
-                              MinMaxNormalizerFactory, \
-                              StdNormalizerFactory
+from structs.normalization import Normalizer, \
+                                  PlainNormalizerFactory, \
+                                  MinMaxNormalizerFactory, \
+                                  StdNormalizerFactory
 
 
 # Create the parser
