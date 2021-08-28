@@ -1,4 +1,4 @@
-from typing import List, Any, Mapping, Iterable, Optional
+from typing import List, Any, Mapping, Iterable, Optional, Sequence
 from fastai.tabular.all import pd # type: ignore
 
 """
@@ -80,7 +80,7 @@ class Candle:
     def get_data_all(self) -> List[float]:
         return self.data
 
-    def normalize(self, offsets: List[float], dividers: List[float]) -> None:
+    def normalize(self, offsets: Sequence[float], dividers: Sequence[float]) -> None:
         assert len(FIELDS) == len(offsets)
         assert len(FIELDS) == len(dividers)
         for i in range(len(FIELDS)):
@@ -91,6 +91,14 @@ class Candle:
 
     def to_csv_all(self) -> str:
         return ", ".join(map(str, self.get_data_all()))
+
+    def copy_from(self, candle: Any) -> None:
+        for i, value in enumerate(candle.data):
+            self.data[i] = value
+
+    @classmethod
+    def make_plain(cls):
+        return cls([0.0] * NUM_FIELDS)
 
     @staticmethod
     def from_csv(record: str):
