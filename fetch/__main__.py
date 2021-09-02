@@ -1,7 +1,7 @@
 import argparse
 
 from binance.spot import Spot # type: ignore
-from fetch.fetch import fetch_last_candles_to_csv
+from fetch.fetch import Fetcher
 from structs.candle import Candle
 
 
@@ -17,14 +17,19 @@ parser.add_argument("--output", type=str, required=True)
 # Execute the parse_args() method
 args = parser.parse_args()
 
+# Unpack symbol list
+symbols = args.symbol.split(",")
+
 # Create binance connector
 client = Spot()
 
-count = fetch_last_candles_to_csv(client,
-                                  symbol=args.symbol,
-                                  interval=args.interval,
-                                  limit=args.n,
-                                  output_fname=args.output)
+fetcher = Fetcher(client)
+for symbol in symbols:
+    # Replace <SYMBOL> template
+    output = args.output.replace("<SYMBOL>", symbol)
+    count = fetcher.fetch_last_candles_to_csv(symbol=symbol,
+                                                interval=args.interval,
+                                                limit=args.n,
+                                                output_fname=output)
 
-print("Records fetched: {}".format(count))
-
+    print("Symbol: {}, records fetched: {}, file: {}".format(symbol, count, output))
