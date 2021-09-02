@@ -1,4 +1,4 @@
-from typing import List, Any, Mapping, Iterable, Optional, Sequence
+from typing import List, Any, Mapping, Iterable, Optional, Sequence, Final
 from fastai.tabular.all import pd # type: ignore
 
 """
@@ -64,7 +64,7 @@ FIELD_NAMES_INDEX = _make_field_names_index()
 
 class Candle:
     def __init__(self, data: List[Any]):
-        assert len(FIELDS) == len(data)
+        assert NUM_FIELDS == len(data)
         self.data: List[float] = list()
         for value in data:
             if not isinstance(value, float):
@@ -74,6 +74,9 @@ class Candle:
     def get_field(self, name: str) -> float:
         return self.data[FIELD_NAMES_INDEX[name]]
 
+    def set_field(self, name: str, value: float):
+        self.data[FIELD_NAMES_INDEX[name]] = value
+
     def get_data(self) -> List[float]:
         return Candle._data_filter_ignore(self.data)
 
@@ -81,10 +84,16 @@ class Candle:
         return self.data
 
     def normalize(self, offsets: Sequence[float], dividers: Sequence[float]) -> None:
-        assert len(FIELDS) == len(offsets)
-        assert len(FIELDS) == len(dividers)
-        for i in range(len(FIELDS)):
+        assert NUM_FIELDS == len(offsets)
+        assert NUM_FIELDS == len(dividers)
+        for i in range(NUM_FIELDS):
             self.data[i] = (self.data[i] - offsets[i]) / dividers[i]
+
+    def denormalize(self, offsets: Sequence[float], dividers: Sequence[float]) -> None:
+        assert NUM_FIELDS == len(offsets)
+        assert NUM_FIELDS == len(dividers)
+        for i in range(NUM_FIELDS):
+            self.data[i] = self.data[i] * dividers[i] + offsets[i]
 
     def to_csv(self) -> str:
         return ", ".join(map(str, self.get_data()))
@@ -114,7 +123,7 @@ class Candle:
 
     @staticmethod
     def _data_filter_ignore(data: List[float]) -> List[float]:
-        assert len(FIELDS) == len(data)
+        assert NUM_FIELDS == len(data)
         result = list()
         for i, value in enumerate(data):
             if FIELDS[i].ignore:
@@ -141,14 +150,14 @@ def make_pandas_series(candles: Iterable[Candle], names: Iterable[str]) -> pd.Se
 def normalize_min_max(candles: List[Candle]):
     min_values: List[float] = list(candles[0].get_data_all())
     max_values: List[float] = list(candles[0].get_data_all())
-    dividers: List[float] = [1.0] * len(FIELDS)
+    dividers: List[float] = [1.0] * NUM_FIELDS
     for candle in candles[1:]:
         for i, value in enumerate(candle.get_data_all()):
             if min_values[i] > value:
                 min_values[i] = value
             if max_values[i] < value:
                 max_values[i] = value
-    for i in range(len(FIELDS)):
+    for i in range(NUM_FIELDS):
         if min_values[i] != max_values[i]:
             dividers[i] = max_values[i] - min_values[i]
     for candle in candles:
