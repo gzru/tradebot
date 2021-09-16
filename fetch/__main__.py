@@ -2,7 +2,6 @@ import argparse
 
 from binance.spot import Spot # type: ignore
 from fetch.fetch import Fetcher
-from structs.candle import Candle
 
 
 # Create the parser
