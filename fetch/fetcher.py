@@ -1,22 +1,26 @@
-from structs.candle2 import Candle
-from structs.candle_traits import CandleTraits
-from binance.spot import Spot # type: ignore
 from typing import Optional, List, TextIO
+
+from binance import spot # type: ignore
+
+from structs import candle2
+from structs import candle_traits
 
 
 class Fetcher:
-    def __init__(self, client: Spot, result_traits: CandleTraits = None):
-        self.client: Spot = client
-        self.source_traits: CandleTraits = CandleTraits.base()
-        self.result_traits: CandleTraits = result_traits
-        if not self.result_traits:
-            self.result_traits = self.source_traits
+    def __init__(self, client: spot.Spot, result_traits: candle_traits.CandleTraits = None):
+        self.client: spot.Spot = client
+        self.source_traits: candle_traits.CandleTraits = candle_traits.CandleTraits.base()
+        self.result_traits: candle_traits.CandleTraits = (result_traits if result_traits
+                                                          else self.source_traits)
 
-    def fetch_candles(self, symbol: str, interval: str, limit: int = 500, end_time: Optional[int] = None) -> List[Candle]:
-        candles = self._fetch_candles(symbol=symbol, interval=interval, limit=limit, end_time=end_time)
+    def fetch_candles(self, symbol: str, interval: str, limit: int = 500,
+                      end_time: Optional[int] = None) -> List[candle2.Candle]:
+        candles = self._fetch_candles(symbol=symbol, interval=interval,
+                                      limit=limit, end_time=end_time)
         return self._convert_to_result_traits(candles)
 
-    def fetch_last_candles_to_csv(self, symbol: str, interval: str, limit: int, output_fname: str) -> int:
+    def fetch_last_candles_to_csv(self, symbol: str, interval: str,
+                                  limit: int, output_fname: str) -> int:
         # Open output file
         output_fd = open(output_fname, "w")
         # Fetch loop
@@ -25,7 +29,8 @@ class Fetcher:
         records_left = limit
         records_count = 0
         while records_left > 0:
-            batch = self._fetch_candles(symbol=symbol, interval=interval, end_time=end_time_biased, limit=records_left)
+            batch = self._fetch_candles(symbol=symbol, interval=interval,
+                                        end_time=end_time_biased, limit=records_left)
             if not batch:
                 break
             len(batch)
@@ -40,7 +45,7 @@ class Fetcher:
                 continue
             batch = self._convert_to_result_traits(batch)
             for candle in reversed(batch):
-                self._write_candle(candle, output_fd)
+                Fetcher._write_candle(candle, output_fd)
                 records_left -= 1
                 records_count += 1
                 if records_left <= 0:
@@ -49,21 +54,23 @@ class Fetcher:
             end_time_biased = end_time - 1000
         return records_count
 
-    def _fetch_candles(self, symbol: str, interval: str, limit: int = 500, end_time: Optional[int] = None) -> List[Candle]:
+    def _fetch_candles(self, symbol: str, interval: str, limit: int = 500,
+                       end_time: Optional[int] = None) -> List[candle2.Candle]:
         limit = max(min(limit, 1000), 10)
         batch = self.client.klines(symbol=symbol, interval=interval, limit=limit, endTime=end_time)
         if not batch:
             return list()
         candles = list()
         for record in batch:
-            candles.append(Candle.from_data(record, self.source_traits))
+            candles.append(candle2.Candle.from_data(record, self.source_traits))
         return candles
 
-    def _convert_to_result_traits(self, candles: List[Candle]) -> List[Candle]:
+    def _convert_to_result_traits(self, candles: List[candle2.Candle]) -> List[candle2.Candle]:
         if self.result_traits is self.source_traits:
             return candles
         return [candle.convert(self.source_traits, self.result_traits) for candle in candles]
 
-    def _write_candle(self, candle: Candle, fd: TextIO):
-        fd.write(candle.to_csv())
-        fd.write("\n")
+    @staticmethod
+    def _write_candle(candle: candle2.Candle, output: TextIO):
+        output.write(candle.to_csv())
+        output.write("\n")
