@@ -6,7 +6,7 @@ class CandleTraits:
         "ot",
         "o",
         "h",
-        "l", 
+        "l",
         "c",
         "v",
         "ct",
@@ -45,7 +45,7 @@ class CandleTraits:
         return cls(map(str.strip, header.strip().split(",")))
 
     def _set_fields(self, fields: Iterable[str]) -> None:
-        self.fields: List[str]  = list(fields)
+        self.fields: List[str] = list(fields)
         self.fields_count: int = len(self.fields)
         self.fields_index: Mapping[str, int] = dict()
         for i, field in enumerate(self.fields):
